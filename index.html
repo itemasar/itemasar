@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مخطط أسبقيات المقررات — فرع الهندسة المعلوماتية (ITE)</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.rtl.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===================== Header ===================== -->
+<header class="hero">
+  <div class="container">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-8">
+        <div class="eyebrow">فرع الهندسة المعلوماتية — ITE</div>
+        <h1>مخطط أسبقيات المقررات</h1>
+        <p class="lead">
+          خريطة تفاعلية لجميع المقررات العامة والأساسية ومسارات التخصص الستة، مع رقم
+          الفصل الدراسي لكل مقرر، وإمكانية الترتيب والتصفية حسب التصنيف أو الفصل.
+          مرّر المؤشر فوق أي بطاقة لتمييز متطلباتها السابقة والمقررات التي تعتمد عليها،
+          واضغطها للاطلاع على تفاصيلها الكاملة.
+        </p>
+      </div>
+      <div class="col-lg-4 d-flex flex-column gap-2">
+        <a href="notes.html" class="plate text-decoration-none d-flex justify-content-between align-items-center" style="color:inherit">
+          <span><i class="bi bi-journal-text me-2" style="color:var(--accent)"></i>ملاحظات ومعلومات البرنامج</span>
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <a href="feedback.html" class="plate text-decoration-none d-flex justify-content-between align-items-center" style="color:inherit">
+          <span><i class="bi bi-chat-square-text me-2" style="color:var(--accent)"></i>شاركنا ملاحظاتك</span>
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <div class="plate">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span style="color:var(--text-2)">إجمالي المقررات المعروضة حاليًا</span>
+            <span id="heroCount" class="mono" style="color:var(--accent);font-weight:800">—</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="color:var(--text-2)">مجموع نقاط الاعتماد</span>
+            <span id="heroCredits" class="mono" style="color:var(--accent);font-weight:800">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== Toolbar ===================== -->
+<div class="toolbar">
+  <div class="container">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-md-3">
+        <label class="small-label" for="sortMode">الترتيب حسب</label>
+        <select id="sortMode" class="form-select form-select-sm">
+          <option value="classification">التصنيف الرئيسي</option>
+          <option value="term">الفصل الدراسي</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="small-label" for="trackFilter">تصفية حسب التصنيف</label>
+        <select id="trackFilter" class="form-select form-select-sm" aria-label="تصفية حسب المسار">
+          <option value="all">جميع المقررات (العامة/الأساسية + كل المسارات)</option>
+          <option value="foundation">المقررات العامة والأساسية فقط</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="small-label" for="termFilter">تصفية حسب الفصل</label>
+        <select id="termFilter" class="form-select form-select-sm">
+          <option value="all">كل الفصول</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="small-label" for="searchBox">بحث</label>
+        <input id="searchBox" type="search" class="form-control form-control-sm" placeholder="اسم أو رمز المقرر…">
+      </div>
+      <div class="col-12 col-md-2 d-flex justify-content-md-end">
+        <div id="resultCount" class="pill">— نتيجة</div>
+      </div>
+    </div>
+    <div class="legend mt-3" id="legend"></div>
+  </div>
+</div>
+
+<!-- ===================== Main ===================== -->
+<main class="container pb-5">
+
+  <!-- إحصائيات -->
+  <div class="row g-3 mt-1" id="statsRow"></div>
+
+  <!-- الأقسام والبطاقات -->
+  <div id="sectionsWrap"></div>
+
+  <div id="emptyState" class="empty-state d-none">
+    <i class="bi bi-search fs-3 d-block mb-2"></i>
+    لا توجد مقررات مطابقة لبحثك. جرّب كلمة أخرى أو أعد ضبط التصفية.
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="mb-2">
+      <strong style="color:var(--text-1)">دليل ألوان المرور (Hover):</strong>
+      عند المرور بالمؤشر فوق أي مقرر — تبقى بقية البطاقات معتّمة، وتُبرَز فقط:
+      <span class="d-inline-flex align-items-center gap-1 mx-1"><i class="bi bi-square-fill" style="color:#F4B740"></i>إطار كهرماني + شارة «متطلب سابق»</span>
+      لكل مقرر يجب اجتيازه أولًا،
+      و<span class="d-inline-flex align-items-center gap-1 mx-1"><i class="bi bi-square-fill" style="color:#4CAF7D"></i>إطار أخضر + شارة «يعتمد عليه»</span>
+      لكل مقرر يشترط هذا المقرر كمتطلب سابق له.
+    </div>
+    <div class="d-flex flex-wrap justify-content-between gap-2">
+      <span>مُعدّة اعتمادًا على قائمة المقررات الرسمية للبرنامج والنماذج الاسترشادية لكل مسار (svuonline.org).</span>
+      <span>
+        <a href="notes.html" class="text-decoration-none" style="color:var(--accent)">ملاحظات ومعلومات البرنامج</a>
+        ·
+        <a href="feedback.html" class="text-decoration-none" style="color:var(--accent)">شاركنا ملاحظاتك ←</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<!-- ===================== Chain panel (pin-to-explore) ===================== -->
+<div id="chainPanel" class="chain-panel" role="dialog" aria-label="سلسلة أسبقيات المقرر">
+  <div class="chain-panel-header">
+    <div>
+      <span class="chain-panel-code mono" id="chainPanelCode"></span>
+      <span class="chain-panel-name" id="chainPanelName"></span>
+    </div>
+    <button type="button" class="chain-panel-close" id="chainPanelClose" aria-label="إغلاق">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+  <div class="chain-panel-body">
+    <div class="chain-panel-section">
+      <div class="chain-panel-label"><i class="bi bi-arrow-left-short"></i> المتطلبات السابقة (كامل السلسلة)</div>
+      <div class="chain-panel-list" id="chainPanelPrereq"></div>
+    </div>
+    <div class="chain-panel-section">
+      <div class="chain-panel-label"><i class="bi bi-arrow-right-short"></i> يعتمد عليه مباشرة</div>
+      <div class="chain-panel-list" id="chainPanelDependent"></div>
+    </div>
+  </div>
+  <a href="#" id="chainPanelOpen" class="chain-panel-open-link" target="_blank" rel="noopener">
+    فتح صفحة تفاصيل هذا المقرر <i class="bi bi-box-arrow-up-left"></i>
+  </a>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="data.js"></script>
+<script>
+/* ============================================================
+   منطق الصفحة الرئيسية
+   ============================================================ */
+const sectionsWrap = document.getElementById('sectionsWrap');
+const emptyState   = document.getElementById('emptyState');
+const sortMode     = document.getElementById('sortMode');
+const trackFilter  = document.getElementById('trackFilter');
+const termFilter   = document.getElementById('termFilter');
+const searchBox    = document.getElementById('searchBox');
+const resultCount  = document.getElementById('resultCount');
+const legendEl     = document.getElementById('legend');
+const statsRow     = document.getElementById('statsRow');
+const heroCount    = document.getElementById('heroCount');
+const heroCredits  = document.getElementById('heroCredits');
+
+// تعبئة قائمة المسارات (تصفية حسب التصنيف)
+const trackGroups = {};
+TRACKS.forEach(t => { (trackGroups[t.group] ||= []).push(t); });
+Object.entries(trackGroups).forEach(([group, list]) => {
+  const og = document.createElement('optgroup');
+  og.label = group;
+  list.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.label;
+    og.appendChild(opt);
+  });
+  trackFilter.appendChild(og);
+});
+
+// تعبئة قائمة الفصول
+for (let i = 1; i <= 10; i++) {
+  const opt = document.createElement('option');
+  opt.value = i;
+  opt.textContent = `الفصل ${TERM_LABELS[i]}`;
+  termFilter.appendChild(opt);
+}
+
+function trackColor(id){ return (TRACKS.find(t => t.id === id) || {}).color; }
+function trackLabel(id){ return (TRACKS.find(t => t.id === id) || {}).label || id; }
+
+// لون محايد يميّز المقررات المشتركة بين عدة مسارات عندما لا يكون هناك مسار واحد محدَّد
+const SHARED_NEUTRAL_COLOR = "#9AA5B1";
+
+/* يحدّد، حسب سياق التصفية الحالي (كل المسارات / مسار واحد بعينه):
+   - القسم (sectionId) الذي يجب أن تُصنَّف تحته البطاقة
+   - اللون الذي يجب أن تُلوَّن به
+   - المسارات الأخرى التي يشترك بها هذا المقرر (لعرضها كتنويه) */
+function courseDisplayMeta(course){
+  const val = trackFilter.value;
+  const singleTrack = (val !== 'all' && val !== 'foundation') ? val : null;
+  const isShared = course.tracks.length > 1;
+
+  if (singleTrack){
+    const sectionId = course.tracks.length === 0 ? course.category : ('track-' + singleTrack);
+    return {
+      sectionId,
+      color: CATEGORIES[sectionId].color,
+      isShared,
+      otherTracks: course.tracks.filter(t => t !== singleTrack),
+    };
+  }
+  return {
+    sectionId: course.category,
+    color: isShared ? SHARED_NEUTRAL_COLOR : CATEGORIES[course.category].color,
+    isShared,
+    otherTracks: course.tracks,
+  };
+}
+
+function currentTrackPredicate(){
+  const val = trackFilter.value;
+  return (course) => {
+    if (val === 'all') return true;
+    if (val === 'foundation') return course.tracks.length === 0;
+    return course.tracks.length === 0 || course.tracks.includes(val);
+  };
+}
+
+function currentTermPredicate(){
+  const val = termFilter.value;
+  if (val === 'all') return () => true;
+  const t = parseInt(val, 10);
+  return (course) => allPossibleTerms(course).includes(t);
+}
+
+function courseMatchesSearch(course, q){
+  if (!q) return true;
+  q = q.trim().toLowerCase();
+  return course.name.toLowerCase().includes(q) ||
+         course.nameEn.toLowerCase().includes(q) ||
+         course.code.toLowerCase().includes(q);
+}
+
+// الفصل المعروض لبطاقة معيّنة بحسب تصفية التصنيف الحالية (إن حُدد مسار واحد بعينه)
+function displayTerm(course){
+  const val = trackFilter.value;
+  const singleTrack = (val !== 'all' && val !== 'foundation') ? val : null;
+  return effectiveTerm(course, singleTrack);
+}
+
+function buildLegend(activeCategories, hasSharedNeutral){
+  const chips = activeCategories.map(catId => {
+    const cat = CATEGORIES[catId];
+    return `<span class="chip"><span class="dot" style="background:${cat.color}"></span>${cat.label}</span>`;
+  });
+  if (hasSharedNeutral){
+    chips.push(`<span class="chip"><span class="dot" style="background:${SHARED_NEUTRAL_COLOR}"></span>مقرر مشترك بين عدة مسارات</span>`);
+  }
+  legendEl.innerHTML = chips.join('');
+}
+
+function render(){
+  const tPred = currentTrackPredicate();
+  const termPred = currentTermPredicate();
+  const q = searchBox.value;
+  const visible = COURSES.filter(c => tPred(c) && termPred(c) && courseMatchesSearch(c, q));
+
+  resultCount.innerHTML = `<i class="bi bi-collection me-1"></i> ${visible.length} مقرر`;
+  heroCount.textContent = visible.length;
+  heroCredits.textContent = visible.reduce((s,c) => s + c.credits, 0);
+
+  if (!visible.length){
+    sectionsWrap.innerHTML = '';
+    emptyState.classList.remove('d-none');
+    buildLegend([], false);
+    renderStats([]);
+    return;
+  }
+  emptyState.classList.add('d-none');
+
+  const metaMap = new Map(visible.map(c => [c.code, courseDisplayMeta(c)]));
+
+  if (sortMode.value === 'term'){
+    renderByTerm(visible, metaMap);
+  } else {
+    renderByClassification(visible, metaMap);
+  }
+
+  bindCardEvents();
+  renderStats(visible);
+}
+
+function renderByClassification(visible, metaMap){
+  const val = trackFilter.value;
+  const singleTrack = (val !== 'all' && val !== 'foundation') ? val : null;
+
+  const byCat = {};
+  let anySharedNeutral = false;
+  visible.forEach(c => {
+    const m = metaMap.get(c.code);
+    if (!singleTrack && m.isShared) anySharedNeutral = true;
+    (byCat[m.sectionId] ||= []).push(c);
+  });
+
+  const activeSections = SECTION_ORDER.filter(catId => byCat[catId] && byCat[catId].length);
+  buildLegend(activeSections, anySharedNeutral);
+
+  sectionsWrap.innerHTML = activeSections.map(catId => {
+    const cat = CATEGORIES[catId];
+    const isTrackSection = catId.startsWith('track-');
+    const list = byCat[catId].slice().sort((a,b) => displayTerm(a) - displayTerm(b));
+
+    let bodyHtml;
+    if (isTrackSection && singleTrack){
+      const exclusive = list.filter(c => c.tracks.length === 1);
+      const shared = list.filter(c => c.tracks.length > 1);
+      bodyHtml = `
+        ${exclusive.length ? `
+          <div class="subgroup-label">مقررات خاصة بهذا المسار<span class="count">(${exclusive.length})</span></div>
+          <div class="course-grid" data-cat="${catId}">${exclusive.map(c => courseCardHTML(c, metaMap.get(c.code))).join('')}</div>
+        ` : ''}
+        ${shared.length ? `
+          <div class="subgroup-label subgroup-shared"><i class="bi bi-link-45deg"></i> مقررات مشتركة مع مسارات أخرى<span class="count">(${shared.length})</span></div>
+          <div class="course-grid" data-cat="${catId}">${shared.map(c => courseCardHTML(c, metaMap.get(c.code))).join('')}</div>
+        ` : ''}
+      `;
+    } else {
+      bodyHtml = `<div class="course-grid" data-cat="${catId}">${list.map(c => courseCardHTML(c, metaMap.get(c.code))).join('')}</div>`;
+    }
+
+    return `
+      <section>
+        <div class="section-title">
+          <span class="bar" style="background:${cat.color}"></span>
+          <h2>${cat.label}</h2>
+          <span class="count">(${list.length})</span>
+        </div>
+        <div class="${isTrackSection ? 'track-band' : ''}">${bodyHtml}</div>
+      </section>`;
+  }).join('');
+}
+
+function renderByTerm(visible, metaMap){
+  const byTerm = {};
+  visible.forEach(c => {
+    const t = displayTerm(c);
+    (byTerm[t] ||= []).push(c);
+  });
+  const catsPresent = new Set(visible.map(c => metaMap.get(c.code).sectionId));
+  const anySharedNeutral = trackFilter.value === 'all' && visible.some(c => c.tracks.length > 1);
+  buildLegend(SECTION_ORDER.filter(id => catsPresent.has(id)), anySharedNeutral);
+
+  const terms = Object.keys(byTerm).map(Number).sort((a,b) => a-b);
+  sectionsWrap.innerHTML = terms.map(t => {
+    const cards = byTerm[t]
+      .slice()
+      .sort((a,b) => metaMap.get(a.code).sectionId.localeCompare(metaMap.get(b.code).sectionId))
+      .map(c => courseCardHTML(c, metaMap.get(c.code))).join('');
+    return `
+      <section>
+        <div class="section-title">
+          <span class="bar" style="background:var(--accent)"></span>
+          <h2>الفصل ${TERM_LABELS[t]}</h2>
+          <span class="count">(${byTerm[t].length})</span>
+        </div>
+        <div class="course-grid" data-term="${t}">${cards}</div>
+      </section>`;
+  }).join('');
+}
+
+function courseCardHTML(c, meta){
+  const term = displayTerm(c);
+  const prereqTags = c.prereq.length
+    ? c.prereq.map(p => `<span class="tag">${p}</span>`).join('')
+    : `<span style="color:var(--text-2)">لا يوجد متطلب سابق</span>`;
+
+  const sharedRow = (meta.otherTracks && meta.otherTracks.length)
+    ? `<div class="shared-with-row">
+         <i class="bi bi-link-45deg"></i> مشترك مع:
+         ${meta.otherTracks.map(t => `<span class="shared-track-pill" style="--tc:${trackColor(t)}">${trackLabel(t)}</span>`).join('')}
+       </div>`
+    : '';
+
+  return `
+    <a class="course-card" href="course.html?code=${encodeURIComponent(c.code)}" target="_blank" rel="noopener"
+       data-code="${c.code}" style="--cat:${meta.color}">
+      <span class="rel-flag flag-prereq"><i class="bi bi-arrow-left-short"></i> متطلب سابق</span>
+      <span class="rel-flag flag-dependent"><i class="bi bi-arrow-right-short"></i> يعتمد عليه</span>
+      <div class="top-row">
+        <span class="code mono">${c.code}</span>
+        <span class="end-group">
+          <span class="pin-btn" role="button" tabindex="0" aria-pressed="false"
+                data-code="${c.code}" title="تثبيت إبراز هذا المقرر (يبقى ظاهرًا أثناء التمرير)">
+            <i class="bi bi-pin-angle"></i>
+          </span>
+          <span class="term-badge">ف${term}</span>
+          <span class="credits mono">${c.credits} نقطة</span>
+        </span>
+      </div>
+      <div class="name">${c.name}</div>
+      ${sharedRow}
+      <div class="prereq-row">${prereqTags}</div>
+    </a>`;
+}
+
+function renderStats(visible){
+  const total = visible.reduce((s,c) => s + c.credits, 0);
+  const withPrereq = visible.filter(c => c.prereq.length).length;
+  const noPrereq = visible.length - withPrereq;
+  const tracksTouched = new Set(visible.flatMap(c => c.tracks)).size;
+
+  statsRow.innerHTML = [
+    { num: visible.length, label:'مقرر ظاهر حاليًا' },
+    { num: total, label:'مجموع نقاط الاعتماد' },
+    { num: noPrereq, label:'مقرر بلا متطلب سابق' },
+    { num: tracksTouched, label:'مسار تخصص ظاهر' },
+  ].map(s => `
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="num mono">${s.num}</div>
+        <div class="label">${s.label}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ---------- إبراز المتطلبات: تثبيت بالنقر/اللمس + لوحة السلسلة ---------- */
+const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+let pinnedCode = null;
+
+const chainPanel      = document.getElementById('chainPanel');
+const chainPanelCode  = document.getElementById('chainPanelCode');
+const chainPanelName  = document.getElementById('chainPanelName');
+const chainPanelPrereq= document.getElementById('chainPanelPrereq');
+const chainPanelDep   = document.getElementById('chainPanelDependent');
+const chainPanelOpen  = document.getElementById('chainPanelOpen');
+const chainPanelClose = document.getElementById('chainPanelClose');
+
+function bindCardEvents(){
+  document.querySelectorAll('.course-grid').forEach(grid => {
+    grid.querySelectorAll('.course-card').forEach(card => {
+      if (canHover){
+        card.addEventListener('mouseenter', () => { if (!pinnedCode) highlight(card.dataset.code); });
+        card.addEventListener('mouseleave', () => { if (!pinnedCode) clearHighlight(); });
+      }
+      card.addEventListener('focus', () => { if (!pinnedCode) highlight(card.dataset.code); });
+      card.addEventListener('blur', () => { if (!pinnedCode) clearHighlight(); });
+    });
+    grid.querySelectorAll('.pin-btn').forEach(btn => {
+      btn.addEventListener('click', onPinActivate);
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); onPinActivate(e); }
+      });
+    });
+  });
+  markPinnedButtons();
+  // إن كان هناك مقرر مثبّت من قبل، أعد تطبيق الإبراز على البطاقات الظاهرة حاليًا
+  if (pinnedCode) highlight(pinnedCode);
+}
+
+function onPinActivate(e){
+  e.preventDefault();
+  e.stopPropagation();
+  const code = e.currentTarget.dataset.code;
+  togglePin(code);
+}
+
+function togglePin(code){
+  if (pinnedCode === code){
+    unpin();
+  } else {
+    pinnedCode = code;
+    highlight(code);
+    showPanel(code);
+    markPinnedButtons();
+  }
+}
+
+function unpin(){
+  pinnedCode = null;
+  clearHighlight();
+  hidePanel();
+  markPinnedButtons();
+}
+
+function markPinnedButtons(){
+  document.querySelectorAll('.pin-btn').forEach(btn => {
+    const active = btn.dataset.code === pinnedCode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.innerHTML = active ? '<i class="bi bi-pin-angle-fill"></i>' : '<i class="bi bi-pin-angle"></i>';
+  });
+}
+
+function allVisibleCards(){
+  return document.querySelectorAll('.course-card');
+}
+
+function highlight(code){
+  const ancestors = getAncestors(code);
+  const dependents = new Set((COURSE_MAP[code] || {}).dependents || []);
+
+  document.querySelectorAll('.course-grid').forEach(g => g.classList.add('hovering'));
+  allVisibleCards().forEach(card => {
+    const c = card.dataset.code;
+    card.classList.remove('hl-self','hl-prereq','hl-dependent');
+    if (c === code) card.classList.add('hl-self');
+    else if (ancestors.has(c)) card.classList.add('hl-prereq');
+    else if (dependents.has(c)) card.classList.add('hl-dependent');
+  });
+}
+
+function clearHighlight(){
+  document.querySelectorAll('.course-grid').forEach(g => g.classList.remove('hovering'));
+  allVisibleCards().forEach(card => card.classList.remove('hl-self','hl-prereq','hl-dependent'));
+}
+
+/* ---------- لوحة السلسلة (chain panel) ---------- */
+function chainItemHTML(code){
+  const c = COURSE_MAP[code];
+  if (!c) return '';
+  return `<button type="button" class="chain-item" data-code="${code}">
+      <span class="chain-item-name">${c.name}</span>
+      <span class="chain-item-code mono">${code}</span>
+    </button>`;
+}
+
+function showPanel(code){
+  const c = COURSE_MAP[code];
+  if (!c) return;
+
+  chainPanelCode.textContent = code;
+  chainPanelName.textContent = c.name;
+  chainPanelOpen.href = `course.html?code=${encodeURIComponent(code)}`;
+
+  const ancestors = Array.from(getAncestors(code))
+    .sort((a,b) => (COURSE_MAP[a].term||0) - (COURSE_MAP[b].term||0));
+  const dependents = (c.dependents || [])
+    .slice()
+    .sort((a,b) => (COURSE_MAP[a].term||0) - (COURSE_MAP[b].term||0));
+
+  chainPanelPrereq.innerHTML = ancestors.length
+    ? ancestors.map(chainItemHTML).join('')
+    : `<div class="chain-panel-empty">لا يوجد متطلب سابق لهذا المقرر.</div>`;
+
+  chainPanelDep.innerHTML = dependents.length
+    ? dependents.map(chainItemHTML).join('')
+    : `<div class="chain-panel-empty">لا توجد مقررات تعتمد على هذا المقرر مباشرة.</div>`;
+
+  chainPanel.classList.add('open');
+  bindChainItemEvents();
+}
+
+function hidePanel(){
+  chainPanel.classList.remove('open');
+}
+
+function bindChainItemEvents(){
+  chainPanel.querySelectorAll('.chain-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.dataset.code;
+      // إعادة تثبيت الإبراز على المقرر المختار (استكشاف متسلسل) والانتقال إليه بصريًا
+      pinnedCode = code;
+      highlight(code);
+      showPanel(code);
+      markPinnedButtons();
+      scrollToCard(code);
+    });
+  });
+}
+
+function scrollToCard(code){
+  const el = document.querySelector(`.course-card[data-code="${code}"]`);
+  if (el){
+    el.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
+    el.classList.add('pulse');
+    setTimeout(() => el.classList.remove('pulse'), 1600);
+  } else {
+    // المقرر غير ظاهر ضمن عوامل التصفية الحالية — أعرض تلميحًا لإظهار الكل ثم أعد المحاولة
+    const hint = document.createElement('div');
+    hint.className = 'chain-panel-hint';
+    hint.innerHTML = `
+      <span>هذا المقرر غير ظاهر ضمن التصفية الحالية.</span>
+      <button type="button" class="btn btn-sm btn-blueprint">إظهار الكل والانتقال إليه</button>`;
+    hint.querySelector('button').addEventListener('click', () => {
+      trackFilter.value = 'all';
+      termFilter.value = 'all';
+      searchBox.value = '';
+      render();
+      setTimeout(() => scrollToCard(code), 60);
+      hint.remove();
+    });
+    chainPanel.querySelector('.chain-panel-body').prepend(hint);
+    setTimeout(() => hint.remove(), 6000);
+  }
+}
+
+chainPanelClose.addEventListener('click', unpin);
+
+sortMode.addEventListener('change', render);
+trackFilter.addEventListener('change', render);
+termFilter.addEventListener('change', render);
+searchBox.addEventListener('input', render);
+
+render();
+</script>
+</body>
+</html>
